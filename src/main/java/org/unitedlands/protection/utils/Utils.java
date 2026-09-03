@@ -8,6 +8,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.util.BoundingBox;
 import org.popcraft.bolt.protection.Protection;
 import org.unitedlands.protection.UnitedProtection;
 
@@ -44,26 +45,18 @@ public class Utils {
         if (world == null)
             return;
 
-        var townBlockHeight = world.getMaxHeight() - 1;
         var townBlockSize = TownySettings.getTownBlockSize();
         var bolt = UnitedProtection.getBoltAPI();
 
-        for (int x = 0; x < townBlockSize; ++x) {
-            for (int z = 0; z < townBlockSize; ++z) {
-                for (int y = townBlockHeight; y > world.getMinHeight(); --y) {
-                    var blockX = worldCoord.getX() * townBlockSize + x;
-                    var blockZ = worldCoord.getZ() * townBlockSize + z;
-                    var block = world.getBlockAt(blockX, y, blockZ);
+        var minX = worldCoord.getX() * townBlockSize;
+        var minZ = worldCoord.getZ() * townBlockSize;
+        var boundingBox = new BoundingBox(
+                minX, world.getMinHeight(), minZ,
+                minX + townBlockSize, world.getMaxHeight(), minZ + townBlockSize
+        );
 
-                    if (!bolt.isProtectable(block))
-                        continue;
-
-                    var protection = bolt.findProtection(block);
-                    if (protection != null) {
-                        bolt.removeProtection(protection);
-                    }
-                }
-            }
+        for (var protection : bolt.findProtections(world, boundingBox)) {
+            bolt.removeProtection(protection);
         }
     }
 
